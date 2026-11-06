@@ -83,4 +83,4 @@ require (
 	google.golang.org/protobuf v1.36.12 // indirect
 )
 
-replace github.com/soulteary/challenge-kit => ../challenge-kit
+replace github.com/soulteary/challenge-kit => ./third_party/challenge-kit

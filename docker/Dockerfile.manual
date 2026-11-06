@@ -12,6 +12,8 @@ WORKDIR /app
 ENV GO111MODULE=on CGO_ENABLED=0 GOPROXY=https://goproxy.cn,direct
 
 COPY go.mod go.sum ./
+# Local replace for the modified challenge-kit (see third_party/challenge-kit/MODIFIED.md).
+COPY third_party/ third_party/
 RUN go mod download
 
 COPY . .
