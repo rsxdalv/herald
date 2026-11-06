@@ -69,7 +69,8 @@ func hardenedHTTPConfig(baseURL, apiKey string, channel provider.Channel, name s
 		Timeout:          config.ProviderTimeout,
 		MaxResponseBytes: int64(config.ProviderMaxResponseBytes),
 		Redirect:         redirect,
-		RequireHTTPS:     config.IsProduction(),
+		// Plain http is allowed only to a loopback gateway (same host/container).
+		RequireHTTPS: config.IsProduction() && !config.IsLoopbackHTTP(baseURL),
 	}
 }
 

@@ -573,8 +573,8 @@ func providerTransportProblems() []string {
 		{"HERALD_DINGTALK_API_URL", HeraldDingtalkAPIURL},
 		{"HERALD_TOTP_BASE_URL", TOTPBaseURL},
 	} {
-		if u.url != "" && !strings.HasPrefix(strings.ToLower(u.url), "https://") {
-			problems = append(problems, u.name+" must use https:// in production")
+		if u.url != "" && !strings.HasPrefix(strings.ToLower(u.url), "https://") && !IsLoopbackHTTP(u.url) {
+			problems = append(problems, u.name+" must use https:// in production (plain http:// is allowed only to a loopback address)")
 		}
 	}
 
