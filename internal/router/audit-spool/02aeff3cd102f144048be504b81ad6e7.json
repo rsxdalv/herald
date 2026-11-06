@@ -1,1 +1,0 @@
-{"event_type":"send_failed","event_id":"02aeff3cd102f144048be504b81ad6e7","user_id":"u1","challenge_id":"ch_-lWV-a1jO2yliuwwC10CPw","channel":"email","destination":"a@b.com","purpose":"login","result":"failure","reason":"not_registered","provider":"smtp","ip":"0.0.0.0","timestamp":1793972778}
