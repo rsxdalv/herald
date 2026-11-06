@@ -89,7 +89,10 @@ If none are set, the service logs a warning and allows unauthenticated requests 
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `HERALD_MAX_CONCURRENT_HASH_OPERATIONS` | Shared creation/v1/v2 verification admission budget per handler instance; positive integer | `4` | No |
+| `HERALD_OTP_CODE_SECRET` | Key for the HMAC-SHA256 that protects stored OTP codes; never written to Redis. At least 32 bytes, must differ from every other Herald secret. Outside production an unset value generates a random per-process secret (codes do not survive restart or work across instances) | (empty) | **Yes in production** |
+| `HERALD_OTP_CODE_SECRET_ID` | Label for the current code secret inside stored hashes; change it whenever the secret changes | `v1` | No |
+| `HERALD_OTP_CODE_SECRETS_PREVIOUS` | Rotation: JSON object `{"<id>":"<old secret>"}` of retired secrets still accepted for verification | (empty) | No |
+| `HERALD_MAX_CONCURRENT_HASH_OPERATIONS` | Shared creation/v1/v2 verification admission budget per handler instance; positive integer. Hashing is now a cheap HMAC, so this is only a generic in-flight guard | `256` | No |
 | `CHALLENGE_EXPIRY` | Challenge expiry (e.g. `5m`, `300s`) | `5m` | No |
 | `MAX_ATTEMPTS` | Max verify failures per challenge before lockout | `5` | No |
 | `LOCKOUT_DURATION` | Lockout duration (e.g. `10m`) | `10m` | No |
@@ -396,12 +399,18 @@ See [security](SECURITY.md#provider-failure-diagnostics) for compatibility detai
 
 ## OTP hash work admission
 
-`HERALD_MAX_CONCURRENT_HASH_OPERATIONS` defaults to 4 and must be positive.
+`HERALD_MAX_CONCURRENT_HASH_OPERATIONS` defaults to 256 and must be positive.
+OTP codes are hashed with a keyed HMAC-SHA256 (microseconds, no memory cost), so
+this budget no longer bounds CPU or memory; it is kept as a cheap overload guard
+for the rate-limit and Redis work done before hashing. Lower it only if you want
+to cap concurrent create/verify requests per instance. The text below describes
+the earlier Argon2 sizing (about 64 MiB per operation, default 4) and is retained
+for reference.
 Earlier releases allowed up to 16 independent verifications while leaving
 creation unbounded. The combined default changes burst admission, not code
 validity. Creation and both OTP verification routes share this budget within the normal
 single-handler service instance. It is local to each instance, not shared across
-replicas. It does not change Argon2 parameters or apply to the TOTP proxy.
+replicas. It does not apply to the TOTP proxy.
 
 Each current Argon2 operation uses about 64 MiB. Size the budget for available
 memory and CPU, including garbage collection and other process overhead; this

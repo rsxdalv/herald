@@ -106,7 +106,7 @@ var (
 	APIKey = env.Get("API_KEY", "")
 
 	// Hash work budget shared by creation and both verification routes.
-	MaxConcurrentHashOperations = env.GetInt("HERALD_MAX_CONCURRENT_HASH_OPERATIONS", 4)
+	MaxConcurrentHashOperations = env.GetInt("HERALD_MAX_CONCURRENT_HASH_OPERATIONS", 256)
 
 	// Challenge config
 	ChallengeExpiry   = env.GetDuration("CHALLENGE_EXPIRY", 5*time.Minute)
@@ -267,6 +267,9 @@ func Initialize(l *logger.Logger) error {
 	if err := initializeSecretsAndPrivacy(); err != nil {
 		return err
 	}
+	if err := initializeOTPCodeSecret(); err != nil {
+		return err
+	}
 
 	// Log configuration (excluding sensitive data)
 	log.Info().
@@ -306,6 +309,7 @@ func Validate() error {
 	var problems []string
 
 	problems = append(problems, listenerAndProviderProblems()...)
+	problems = append(problems, otpCodeSecretProblems(Env == EnvProduction)...)
 
 	if Env != EnvProduction {
 		// Non-production: surface issues as warnings and continue, but never

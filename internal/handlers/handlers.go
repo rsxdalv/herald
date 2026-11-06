@@ -94,7 +94,17 @@ func NewHandlersWithError(redisClient *redis.Client, log *logger.Logger) (*Handl
 	if err != nil {
 		return nil, err
 	}
+	if err := config.InitializeOTPCodeSecret(); err != nil {
+		return nil, err
+	}
+	previousCodeSecrets, err := config.OTPCodePreviousSecrets()
+	if err != nil {
+		return nil, err
+	}
 	challengeConfig := challengekit.Config{
+		CodeSecret:                 config.OTPCodeSecretBytes(),
+		CodeSecretID:               config.OTPCodeSecretID,
+		PreviousCodeSecrets:        previousCodeSecrets,
 		MaxConcurrentVerifications: config.MaxConcurrentHashOperations,
 		// Do not poll a contended challenge lock while holding the shared budget.
 		// A positive expired deadline permits one immediate lock attempt.
@@ -105,6 +115,9 @@ func NewHandlersWithError(redisClient *redis.Client, log *logger.Logger) (*Handl
 		CodeLength:         config.CodeLength,
 		ChallengeKeyPrefix: "otp:ch:",
 		LockKeyPrefix:      "otp:lock:",
+	}
+	if err := challengeConfig.Validate(); err != nil {
+		return nil, fmt.Errorf("OTP code secret invalid (HERALD_OTP_CODE_SECRET): %w", err)
 	}
 	challengeMgr := newAtomicChallengeManager(redisClient, challengeConfig)
 

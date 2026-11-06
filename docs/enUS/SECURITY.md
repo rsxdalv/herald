@@ -7,7 +7,7 @@ This document explains Herald's security features, security configuration, and b
 ## Implemented Security Features
 
 1. **Challenge-Based Verification**: Uses challenge-verify model to prevent replay attacks and ensure one-time use of verification codes
-2. **Secure Code Storage**: Verification codes are stored as Argon2 hashes, never in plaintext
+2. **Secure Code Storage**: Verification codes are stored only as a keyed HMAC-SHA256 (`hmac-sha256$<key-id>$<mac>`) over the challenge ID and the code, using `HERALD_OTP_CODE_SECRET`, which is never stored in Redis
 3. **Multi-Dimensional Rate Limiting**: Rate limiting by user_id, destination (email/phone), and IP address to prevent abuse
 4. **Service Authentication**: Supports mTLS, HMAC signature, and API Key authentication for inter-service communication
 5. **Idempotency Protection**: Prevents duplicate challenge creation and code sending using idempotency keys
@@ -190,7 +190,7 @@ export CLIENT_CERT_MODE=require
 
 ### Verification Code Storage
 
-- **Never stored in plaintext**: All verification codes are hashed using Argon2
+- **Never stored in plaintext**: All verification codes are stored as `HMAC-SHA256(secret, challenge_id, code)`; the secret lives only in Herald configuration. A Redis-only leak cannot be used to test guesses of the 6-digit code; protect `HERALD_OTP_CODE_SECRET` like `HMAC_SECRET` and rotate with `HERALD_OTP_CODE_SECRET_ID` + `HERALD_OTP_CODE_SECRETS_PREVIOUS` (keep the old secret for at least `CHALLENGE_EXPIRY`)
 - **One-time use**: Challenges are deleted immediately after successful verification
 - **Automatic expiration**: Challenges expire after TTL to prevent stale code usage
 
@@ -349,8 +349,8 @@ listener and `debug_code`. Production rejects this mode.
 
 ## Hash resource limits
 
-Per-user, IP and destination rate limits do not cap aggregate concurrent Argon2
-work across distinct identities and destinations. The shared OTP admission budget
+Per-user, IP and destination rate limits do not cap aggregate concurrent hash
+work (now a cheap HMAC) across distinct identities and destinations. The shared OTP admission budget
 also limits creation, which previously had no global work cap. This protects
 against memory exhaustion when authenticated traffic is otherwise within the
 configured rate limits. It is not a replacement for those limits or for process

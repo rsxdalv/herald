@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/soulteary/herald/internal/config"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -40,6 +41,11 @@ func (m *blockingHashManager) Create(context.Context, challengekit.CreateRequest
 }
 
 func TestCreateHashWorkHasBoundedAdmission(t *testing.T) {
+	// The shipped default is now large (HMAC hashing is cheap); the admission
+	// logic itself is still exercised at a limit of 4.
+	oldHashOps := config.MaxConcurrentHashOperations
+	config.MaxConcurrentHashOperations = 4
+	defer func() { config.MaxConcurrentHashOperations = oldHashOps }()
 	rc := testRedisClient(t)
 	t.Cleanup(func() { _ = rc.Close() })
 	h := newIdemHandlers(t, rc)
@@ -99,7 +105,7 @@ func BenchmarkChallengeCreationAllocation(b *testing.B) {
 	mr := miniredis.RunT(b)
 	rc := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	b.Cleanup(func() { _ = rc.Close() })
-	m := newAtomicChallengeManager(rc, challengekit.Config{Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
+	m := newAtomicChallengeManager(rc, challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

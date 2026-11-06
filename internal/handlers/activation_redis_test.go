@@ -24,7 +24,7 @@ func TestAtomicActivationWithRedisServer(t *testing.T) {
 	defer func() { _ = rc.Close() }()
 	require.NoError(t, rc.Ping(ctx).Err())
 	prefix := fmt.Sprintf("activation-test:%d:", time.Now().UnixNano())
-	cfg := challengekit.Config{Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5, ChallengeKeyPrefix: prefix + "ch:", ActiveIndexPrefix: prefix + "active:", LockKeyPrefix: prefix + "lock:"}
+	cfg := challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5, ChallengeKeyPrefix: prefix + "ch:", ActiveIndexPrefix: prefix + "active:", LockKeyPrefix: prefix + "lock:"}
 	m := newAtomicChallengeManager(rc, cfg)
 	legacy := challengekit.NewManager(rc, cfg)
 	old, oldCode := createActivationOTP(t, legacy, "user")

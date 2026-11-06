@@ -85,7 +85,7 @@ flowchart LR
 
 - **Stargate ↔ Herald**: Request authentication requires HMAC (v3 for creation; version, timestamp, nonce, service and key ID headers) or API key. Optional mTLS is a separate transport policy and does not replace request authentication.
 - **Herald ↔ Provider (e.g. herald-smtp, herald-dingtalk)**: Optional API Key (`HERALD_SMTP_API_KEY`, `HERALD_DINGTALK_API_KEY`). SMTP and DingTalk credentials stay in adapter services when those adapters are used; built-in SMTP reads `SMTP_*` in Herald.
-- **PII**: Verification codes are stored only as hashes (e.g. Argon2) in Redis. Destination (email/phone) is used for sending and may appear in audit logs in masked form; avoid logging raw codes.
+- **PII**: Verification codes are stored only as keyed HMAC-SHA256 hashes in Redis (the key, `HERALD_OTP_CODE_SECRET`, never reaches Redis). Destination (email/phone) is used for sending and may appear in audit logs in masked form; avoid logging raw codes.
 
 ## Related Documentation
 

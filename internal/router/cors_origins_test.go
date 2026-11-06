@@ -44,6 +44,9 @@ func TestProductionRouterRejectsWildcardInCORSOriginList(t *testing.T) {
 
 func TestRouterCORSOriginListCompatibility(t *testing.T) {
 	defer withV2Config(t)()
+	oldSecret := config.OTPCodeSecret
+	config.OTPCodeSecret = "0123456789abcdef0123456789abcdef"
+	t.Cleanup(func() { config.OTPCodeSecret = oldSecret })
 	oldEnv, oldOrigins := config.Env, config.CORSAllowOrigins
 	t.Cleanup(func() { config.Env, config.CORSAllowOrigins = oldEnv, oldOrigins })
 	rc, _ := testutil.NewTestRedisClient()

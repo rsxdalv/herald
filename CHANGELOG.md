@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (local fork)
+
+- Store OTP codes as a keyed HMAC-SHA256 over (challenge ID, code) instead of Argon2id, via a patched `challenge-kit` (`replace ../challenge-kit`). New **required-in-production** `HERALD_OTP_CODE_SECRET` (>= 32 bytes, distinct from `HMAC_SECRET` and every other secret); optional `HERALD_OTP_CODE_SECRET_ID` and `HERALD_OTP_CODE_SECRETS_PREVIOUS` for rotation. Outside production an unset secret is generated per process with a warning. Existing Argon2 challenges do not verify (nothing deployed). `HERALD_MAX_CONCURRENT_HASH_OPERATIONS` now defaults to 256 because hashing no longer costs 64 MiB.
+
 ### Changed
 
 - Update the imported herald-totp client module from v1.2.5 to v1.2.6 and document the matching provider deployment pins. Existing authentication, TOTP requests and stored credentials remain compatible.

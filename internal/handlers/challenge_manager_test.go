@@ -29,7 +29,7 @@ func createActivationOTP(t *testing.T, m challengekit.ManagerInterface, user str
 func TestAtomicActivationMigratesLegacyIndex(t *testing.T) {
 	for _, prefix := range []string{"", "custom:"} {
 		t.Run(prefix, func(t *testing.T) {
-			cfg := challengekit.Config{Expiry: 5 * time.Minute, CodeLength: 6, MaxAttempts: 5}
+			cfg := challengekit.Config{CodeSecret: testCodeSecret, Expiry: 5 * time.Minute, CodeLength: 6, MaxAttempts: 5}
 			if prefix != "" {
 				cfg.ChallengeKeyPrefix = prefix + "ch:"
 				cfg.ActiveIndexPrefix = prefix + "active:"
@@ -64,7 +64,7 @@ func TestAtomicActivationMigratesLegacyIndex(t *testing.T) {
 }
 
 func TestAtomicActivationPreservesOtherIdentitiesAndSameCandidate(t *testing.T) {
-	m, _, mr := activationFixture(t, challengekit.Config{Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
+	m, _, mr := activationFixture(t, challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
 	other, _ := createActivationOTP(t, m, "other-user")
 	_, err := m.SwapActive(context.Background(), other)
 	require.NoError(t, err)
@@ -81,7 +81,7 @@ func TestAtomicActivationPreservesOtherIdentitiesAndSameCandidate(t *testing.T) 
 }
 
 func TestAtomicActivationFailureDoesNotPublishIndex(t *testing.T) {
-	m, _, mr := activationFixture(t, challengekit.Config{Expiry: time.Minute, CodeLength: 6})
+	m, _, mr := activationFixture(t, challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute, CodeLength: 6})
 	old, _ := createActivationOTP(t, m, "user")
 	_, err := m.SwapActive(context.Background(), old)
 	require.NoError(t, err)
@@ -95,7 +95,7 @@ func TestAtomicActivationFailureDoesNotPublishIndex(t *testing.T) {
 	require.Equal(t, old.ID, active)
 	_, err = m.SwapActive(context.Background(), nil)
 	require.Error(t, err)
-	nilClient := newAtomicChallengeManager(nil, challengekit.Config{Expiry: time.Minute})
+	nilClient := newAtomicChallengeManager(nil, challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute})
 	_, err = nilClient.SwapActive(context.Background(), old)
 	require.ErrorIs(t, err, challengekit.ErrBackendUnavailable)
 	m.config.Expiry = 0
@@ -104,7 +104,7 @@ func TestAtomicActivationFailureDoesNotPublishIndex(t *testing.T) {
 }
 
 func TestConcurrentActivationsLeaveOnlyIndexedCandidate(t *testing.T) {
-	m, rc, mr := activationFixture(t, challengekit.Config{Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
+	m, rc, mr := activationFixture(t, challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
 	var candidates []*challengekit.Challenge
 	for i := 0; i < 4; i++ {
 		ch, _ := createActivationOTP(t, m, "user")
@@ -128,7 +128,7 @@ func TestConcurrentActivationsLeaveOnlyIndexedCandidate(t *testing.T) {
 }
 
 func TestActivationSeparatesCaseSensitiveUsers(t *testing.T) {
-	m, _, _ := activationFixture(t, challengekit.Config{Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
+	m, _, _ := activationFixture(t, challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
 	first, code := createActivationOTP(t, m, "Alice")
 	_, err := m.SwapActive(context.Background(), first)
 	require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestActivationSeparatesCaseSensitiveUsers(t *testing.T) {
 }
 
 func TestActivationDoesNotRevokeCollidingLegacyIdentity(t *testing.T) {
-	m, rc, mr := activationFixture(t, challengekit.Config{Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
+	m, rc, mr := activationFixture(t, challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute, CodeLength: 6, MaxAttempts: 5})
 	legacy := challengekit.NewManager(rc, m.config)
 	victim, code := createActivationOTP(t, legacy, "Alice")
 	_, err := legacy.SwapActive(context.Background(), victim)
@@ -163,7 +163,7 @@ func TestActivationDoesNotRevokeCollidingLegacyIdentity(t *testing.T) {
 }
 
 func TestActiveIndexPreservesFieldBoundariesAndValues(t *testing.T) {
-	m, _, _ := activationFixture(t, challengekit.Config{Expiry: time.Minute})
+	m, _, _ := activationFixture(t, challengekit.Config{CodeSecret: testCodeSecret, Expiry: time.Minute})
 	base := challengekit.Challenge{UserID: "Alice", Purpose: "login", Channel: challengekit.ChannelEmail, Destination: "A@example.com"}
 	for _, mutate := range []func(*challengekit.Challenge){
 		func(ch *challengekit.Challenge) { ch.UserID = "alice" },

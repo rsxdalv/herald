@@ -49,7 +49,7 @@ func testRedisClient(t *testing.T) *redis.Client {
 // testChallengeManager creates a challenge manager for testing
 func testChallengeManager(t *testing.T, redisClient *redis.Client) challengekit.ManagerInterface {
 	t.Helper()
-	config := challengekit.Config{
+	config := challengekit.Config{CodeSecret: testCodeSecret,
 		Expiry:          config.ChallengeExpiry,
 		MaxAttempts:     config.MaxAttempts,
 		LockoutDuration: config.LockoutDuration,
@@ -542,7 +542,7 @@ func TestHandlers_VerifyChallenge_Success(t *testing.T) {
 	handlers := NewHandlers(redisClient, testLogger())
 
 	// Create a challenge first
-	challengeConfig := challengekit.Config{
+	challengeConfig := challengekit.Config{CodeSecret: testCodeSecret,
 		Expiry:          config.ChallengeExpiry,
 		MaxAttempts:     config.MaxAttempts,
 		LockoutDuration: config.LockoutDuration,
@@ -667,7 +667,7 @@ func TestHandlers_VerifyChallenge_AMR_ByChannel(t *testing.T) {
 			handlers := NewHandlers(redisClient, testLogger())
 
 			// Create a challenge first
-			challengeConfig := challengekit.Config{
+			challengeConfig := challengekit.Config{CodeSecret: testCodeSecret,
 				Expiry:          config.ChallengeExpiry,
 				MaxAttempts:     config.MaxAttempts,
 				LockoutDuration: config.LockoutDuration,
@@ -1522,7 +1522,7 @@ func TestHandlers_CreateChallenge_UserLocked(t *testing.T) {
 	handlers := NewHandlers(redisClient, testLogger())
 
 	// Manually lock the user by using the challenge manager's lock functionality
-	challengeConfig := challengekit.Config{
+	challengeConfig := challengekit.Config{CodeSecret: testCodeSecret,
 		Expiry:          config.ChallengeExpiry,
 		MaxAttempts:     config.MaxAttempts,
 		LockoutDuration: config.LockoutDuration,
@@ -1769,7 +1769,7 @@ func TestHandlers_GetTestCode(t *testing.T) {
 	handlers := NewHandlers(redisClient, testLogger())
 
 	// Create a challenge and store test code
-	challengeConfig := challengekit.Config{
+	challengeConfig := challengekit.Config{CodeSecret: testCodeSecret,
 		Expiry:          5 * time.Minute,
 		MaxAttempts:     5,
 		LockoutDuration: 10 * time.Minute,
@@ -2042,7 +2042,7 @@ func checkVerificationExpiredChallenge(t *testing.T, redisClient *redis.Client, 
 func checkVerificationLockedChallenge(t *testing.T, redisClient *redis.Client, app *fiber.App) {
 	t.Helper()
 	config.ChallengeExpiry = 5 * time.Minute
-	challengeConfig := challengekit.Config{
+	challengeConfig := challengekit.Config{CodeSecret: testCodeSecret,
 		Expiry:          config.ChallengeExpiry,
 		MaxAttempts:     3, // Max attempts = 3
 		LockoutDuration: config.LockoutDuration,
